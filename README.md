@@ -1,5 +1,10 @@
 # Aliyun FunctionCompute Go SDK
 
+原仓库老哥代码停在了一年前了，好多接口参数都丢了没法配置。修正一个来填上一些坑。
+
++  TriggerConfig 从 interface 改为具体的结构体
++  function 增加 cpu 配置
+
 API Reference :
 
 [FC API](https://help.aliyun.com/document_detail/52877.html)

@@ -123,6 +123,8 @@ type CreateFunctionInput struct {
 type FunctionCreateObject struct {
 	FunctionName          *string                `json:"functionName"`
 	Description           *string                `json:"description"`
+	CPU                   *float32               `json:"cpu"`
+	Disk                  *int32                 `json:"diskSize"`
 	Runtime               *string                `json:"runtime"`
 	Handler               *string                `json:"handler"`
 	Initializer           *string                `json:"initializer"`
@@ -142,6 +144,16 @@ type FunctionCreateObject struct {
 
 func NewCreateFunctionInput(serviceName string) *CreateFunctionInput {
 	return &CreateFunctionInput{ServiceName: &serviceName}
+}
+
+func (i *CreateFunctionInput) WithCPU(cpu float32) *CreateFunctionInput {
+	i.CPU = &cpu
+	return i
+}
+
+func (i *CreateFunctionInput) WithDisk(disk int32) *CreateFunctionInput {
+	i.Disk = &disk
+	return i
 }
 
 func (i *CreateFunctionInput) WithFunctionName(functionName string) *CreateFunctionInput {
@@ -522,6 +534,7 @@ func (o GetFunctionOutput) String() string {
 type functionMetadata struct {
 	FunctionID            *string                `json:"functionId"`
 	FunctionName          *string                `json:"functionName"`
+	CPU                   *float32               `json:"cpu"`
 	Description           *string                `json:"description"`
 	Runtime               *string                `json:"runtime"`
 	Handler               *string                `json:"handler"`

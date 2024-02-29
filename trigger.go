@@ -9,13 +9,13 @@ import (
 )
 
 const (
-	TRIGGER_TYPE_OSS        = "oss"
-	TRIGGER_TYPE_LOG        = "log"
-	TRIGGER_TYPE_TIMER      = "timer"
-	TRIGGER_TYPE_HTTP       = "http"
-	TRIGGER_TYPE_TABLESTORE = "tablestore"
-	TRIGGER_TYPE_CDN_EVENTS = "cdn_events"
-	TRIGGER_TYPE_MNS_TOPIC  = "mns_topic"
+	TRIGGER_TYPE_OSS         = "oss"
+	TRIGGER_TYPE_LOG         = "log"
+	TRIGGER_TYPE_TIMER       = "timer"
+	TRIGGER_TYPE_HTTP        = "http"
+	TRIGGER_TYPE_TABLESTORE  = "tablestore"
+	TRIGGER_TYPE_CDN_EVENTS  = "cdn_events"
+	TRIGGER_TYPE_MNS_TOPIC   = "mns_topic"
 	TRIGGER_TYPE_EVENTBRIDGE = "eventbridge"
 )
 
@@ -24,19 +24,25 @@ type CreateTriggerInput struct {
 	ServiceName  *string
 	FunctionName *string
 	TriggerCreateObject
-	headers      Header
+	headers Header
 }
 
 type TriggerCreateObject struct {
-	TriggerName    *string     `json:"triggerName"`
-	Description    *string     `json:"description"`
-	SourceARN      *string     `json:"sourceArn"`
-	TriggerType    *string     `json:"triggerType"`
-	InvocationRole *string     `json:"invocationRole"`
-	TriggerConfig  interface{} `json:"triggerConfig"`
-	Qualifier      *string     `json:"qualifier"`
+	TriggerName    *string        `json:"triggerName"`
+	Description    *string        `json:"description"`
+	SourceARN      *string        `json:"sourceArn"`
+	TriggerType    *string        `json:"triggerType"`
+	InvocationRole *string        `json:"invocationRole"`
+	TriggerConfig  *TriggerConfig `json:"triggerConfig"`
+	Qualifier      *string        `json:"qualifier"`
 
 	err error `json:"-"`
+}
+
+type TriggerConfig struct {
+	Methods            []string `json:"methods"`
+	AuthType           string   `json:"authType"`
+	DisableURLInternet bool     `json:"disableURLInternet"`
 }
 
 func NewCreateTriggerInput(serviceName string, functionName string) *CreateTriggerInput {
@@ -77,7 +83,7 @@ func (i *CreateTriggerInput) WithInvocationRole(role string) *CreateTriggerInput
 	return i
 }
 
-func (i *CreateTriggerInput) WithTriggerConfig(config interface{}) *CreateTriggerInput {
+func (i *CreateTriggerInput) WithTriggerConfig(config TriggerConfig) *CreateTriggerInput {
 	i.TriggerConfig = &config
 	return i
 }
@@ -161,18 +167,20 @@ func (o CreateTriggerOutput) MarshalJSON() ([]byte, error) {
 }
 
 type triggerMetadata struct {
-	TriggerName      *string         `json:"triggerName"`
-	Description      *string         `json:"description"`
-	TriggerID        *string         `json:"triggerID"`
-	SourceARN        *string         `json:"sourceArn"`
-	TriggerType      *string         `json:"triggerType"`
-	InvocationRole   *string         `json:"invocationRole"`
-	Qualifier        *string         `json:"qualifier"`
-	RawTriggerConfig json.RawMessage `json:"triggerConfig"`
-	CreatedTime      *string         `json:"createdTime"`
-	LastModifiedTime *string         `json:"lastModifiedTime"`
+	TriggerName      *string       `json:"triggerName"`
+	Description      *string       `json:"description"`
+	TriggerID        *string       `json:"triggerID"`
+	SourceARN        *string       `json:"sourceArn"`
+	TriggerType      *string       `json:"triggerType"`
+	InvocationRole   *string       `json:"invocationRole"`
+	Qualifier        *string       `json:"qualifier"`
+	TriggerConfig    TriggerConfig `json:"triggerConfig"`
+	CreatedTime      *string       `json:"createdTime"`
+	LastModifiedTime *string       `json:"lastModifiedTime"`
+	UrlInternet      string        `json:"urlInternet"`
+	UrlIntranet      string        `json:"urlIntranet"`
 
-	TriggerConfig interface{} `json:"-"`
+	//RawTriggerConfig json.RawMessage `json:"_"`
 }
 
 type triggerMetadataAlias triggerMetadata
@@ -186,58 +194,58 @@ func (m *triggerMetadata) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	switch *tmp.TriggerType {
-	case TRIGGER_TYPE_OSS:
-		ossTriggerConfig := &OSSTriggerConfig{}
-		if err := json.Unmarshal(tmp.RawTriggerConfig, ossTriggerConfig); err != nil {
-			return err
-		}
-		tmp.TriggerConfig = ossTriggerConfig
-	case TRIGGER_TYPE_LOG:
-		logTriggerConfig := &LogTriggerConfig{}
-		if err := json.Unmarshal(tmp.RawTriggerConfig, logTriggerConfig); err != nil {
-			return err
-		}
-		tmp.TriggerConfig = logTriggerConfig
-	case TRIGGER_TYPE_TIMER:
-		timeTriggerConfig := &TimeTriggerConfig{}
-		if err := json.Unmarshal(tmp.RawTriggerConfig, timeTriggerConfig); err != nil {
-			return err
-		}
-		tmp.TriggerConfig = timeTriggerConfig
-	case TRIGGER_TYPE_HTTP:
-		httpTriggerConfig := &HTTPTriggerConfig{}
-		if err := json.Unmarshal(tmp.RawTriggerConfig, httpTriggerConfig); err != nil {
-			return err
-		}
-		tmp.TriggerConfig = httpTriggerConfig
-	case TRIGGER_TYPE_TABLESTORE:
-		tableStoreTriggerConfig := &TableStoreTriggerConfig{}
-		if err := json.Unmarshal(tmp.RawTriggerConfig, tableStoreTriggerConfig); err != nil {
-			return err
-		}
-		tmp.TriggerConfig = tableStoreTriggerConfig
-	case TRIGGER_TYPE_CDN_EVENTS:
-		cdnEventsTriggerConfig := &CDNEventsTriggerConfig{}
-		if err := json.Unmarshal(tmp.RawTriggerConfig, cdnEventsTriggerConfig); err != nil {
-			return err
-		}
-		tmp.TriggerConfig = cdnEventsTriggerConfig
-	case TRIGGER_TYPE_MNS_TOPIC:
-		mnsTriggerConfig := &MnsTopicTriggerConfig{}
-		if err := json.Unmarshal(tmp.RawTriggerConfig, mnsTriggerConfig); err != nil {
-			return err
-		}
-		tmp.TriggerConfig = mnsTriggerConfig
-	case TRIGGER_TYPE_EVENTBRIDGE:
-		ebTriggerConfig := &EventBridgeTriggerConfig{}
-		if err := json.Unmarshal(tmp.RawTriggerConfig, ebTriggerConfig); err != nil {
-			return err
-		}
-		tmp.TriggerConfig = ebTriggerConfig
-	default:
-		return ErrUnknownTriggerType
-	}
+	//switch *tmp.TriggerType {
+	//case TRIGGER_TYPE_OSS:
+	//	ossTriggerConfig := &OSSTriggerConfig{}
+	//	if err := json.Unmarshal(tmp.RawTriggerConfig, ossTriggerConfig); err != nil {
+	//		return err
+	//	}
+	//	tmp.TriggerConfig = ossTriggerConfig
+	//case TRIGGER_TYPE_LOG:
+	//	logTriggerConfig := &LogTriggerConfig{}
+	//	if err := json.Unmarshal(tmp.RawTriggerConfig, logTriggerConfig); err != nil {
+	//		return err
+	//	}
+	//	tmp.TriggerConfig = logTriggerConfig
+	//case TRIGGER_TYPE_TIMER:
+	//	timeTriggerConfig := &TimeTriggerConfig{}
+	//	if err := json.Unmarshal(tmp.RawTriggerConfig, timeTriggerConfig); err != nil {
+	//		return err
+	//	}
+	//	tmp.TriggerConfig = timeTriggerConfig
+	//case TRIGGER_TYPE_HTTP:
+	//	httpTriggerConfig := &HTTPTriggerConfig{}
+	//	if err := json.Unmarshal(tmp.RawTriggerConfig, httpTriggerConfig); err != nil {
+	//		return err
+	//	}
+	//	tmp.TriggerConfig = httpTriggerConfig
+	//case TRIGGER_TYPE_TABLESTORE:
+	//	tableStoreTriggerConfig := &TableStoreTriggerConfig{}
+	//	if err := json.Unmarshal(tmp.RawTriggerConfig, tableStoreTriggerConfig); err != nil {
+	//		return err
+	//	}
+	//	tmp.TriggerConfig = tableStoreTriggerConfig
+	//case TRIGGER_TYPE_CDN_EVENTS:
+	//	cdnEventsTriggerConfig := &CDNEventsTriggerConfig{}
+	//	if err := json.Unmarshal(tmp.RawTriggerConfig, cdnEventsTriggerConfig); err != nil {
+	//		return err
+	//	}
+	//	tmp.TriggerConfig = cdnEventsTriggerConfig
+	//case TRIGGER_TYPE_MNS_TOPIC:
+	//	mnsTriggerConfig := &MnsTopicTriggerConfig{}
+	//	if err := json.Unmarshal(tmp.RawTriggerConfig, mnsTriggerConfig); err != nil {
+	//		return err
+	//	}
+	//	tmp.TriggerConfig = mnsTriggerConfig
+	//case TRIGGER_TYPE_EVENTBRIDGE:
+	//	ebTriggerConfig := &EventBridgeTriggerConfig{}
+	//	if err := json.Unmarshal(tmp.RawTriggerConfig, ebTriggerConfig); err != nil {
+	//		return err
+	//	}
+	//	tmp.TriggerConfig = ebTriggerConfig
+	//default:
+	//	return ErrUnknownTriggerType
+	//}
 	*m = triggerMetadata(tmp)
 	return nil
 }
@@ -439,7 +447,7 @@ type UpdateTriggerInput struct {
 	TriggerName  *string
 	TriggerUpdateObject
 	IfMatch *string
-	headers      Header
+	headers Header
 }
 
 func NewUpdateTriggerInput(serviceName string, functionName string, triggerName string) *UpdateTriggerInput {
@@ -565,7 +573,7 @@ type ListTriggersInput struct {
 	ServiceName  *string
 	FunctionName *string
 	Query
-	headers      Header
+	headers Header
 }
 
 func NewListTriggersInput(serviceName string, functionName string) *ListTriggersInput {
